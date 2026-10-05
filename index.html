@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>B Fresas Lovers — Sistema</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍓</text></svg>" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['Quicksand', 'sans-serif'],
+          heading: ['Poppins', 'sans-serif'],
+        },
+        colors: {
+          blush: { 50:'#fff6fa', 100:'#ffe9f3', 200:'#ffd1e6', 300:'#ffaed2', 400:'#ff85ba', 500:'#f562a0', 600:'#e0468a', 700:'#bf3572' },
+          mint: { 50:'#f2fbf6', 100:'#dff6e8', 200:'#bdedd0', 300:'#93e0b2', 400:'#66cf92', 500:'#45b877', 600:'#339862' },
+          lilac: { 50:'#faf6ff', 100:'#f1e6fe', 200:'#e2cdfc', 300:'#cca6f7', 400:'#b17ef0' },
+        },
+        borderRadius: { '2xl': '1.25rem', '3xl': '1.75rem' },
+      }
+    }
+  }
+</script>
+<link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body class="min-h-screen bg-blush-50 font-sans text-slate-700">
+  <div id="app"></div>
+  <script type="module" src="/js/app.js"></script>
+</body>
+</html>

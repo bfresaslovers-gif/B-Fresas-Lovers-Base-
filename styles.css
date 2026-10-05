@@ -1,0 +1,89 @@
+:root {
+  --shadow-soft: 0 10px 30px -12px rgba(224, 70, 138, 0.25);
+}
+
+h1, h2, h3, .heading {
+  font-family: 'Poppins', sans-serif;
+}
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: #ffd1e6; border-radius: 999px; }
+::-webkit-scrollbar-track { background: transparent; }
+
+.card {
+  background: #fff;
+  border-radius: 1.5rem;
+  box-shadow: var(--shadow-soft);
+  border: 1px solid #ffe9f3;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #ff85ba, #f562a0);
+  color: white;
+  font-weight: 600;
+  border-radius: 1rem;
+  box-shadow: 0 8px 20px -8px rgba(224,70,138,0.55);
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 10px 24px -8px rgba(224,70,138,0.6); }
+.btn-primary:active { transform: translateY(0); }
+.btn-primary:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+.btn-secondary {
+  background: #fff;
+  color: #bf3572;
+  font-weight: 600;
+  border: 1.5px solid #ffb6d5;
+  border-radius: 1rem;
+}
+.btn-secondary:hover { background: #fff6fa; }
+
+.btn-mint {
+  background: linear-gradient(135deg, #93e0b2, #45b877);
+  color: white;
+  font-weight: 600;
+  border-radius: 1rem;
+  box-shadow: 0 8px 20px -8px rgba(69,184,119,0.5);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  padding: .25rem .7rem;
+  border-radius: 999px;
+  font-size: .75rem;
+  font-weight: 600;
+}
+.chip-pink { background:#ffe9f3; color:#bf3572; }
+.chip-mint { background:#dff6e8; color:#339862; }
+.chip-lilac { background:#f1e6fe; color:#8b3fe0; }
+.chip-gray { background:#f1f5f9; color:#475569; }
+
+.input {
+  width: 100%;
+  border-radius: .9rem;
+  border: 1.5px solid #ffd1e6;
+  padding: .6rem .9rem;
+  background: #fff;
+  outline: none;
+}
+.input:focus { border-color: #f562a0; box-shadow: 0 0 0 3px rgba(245,98,160,0.15); }
+
+.label { font-size:.8rem; font-weight:600; color:#bf3572; margin-bottom:.25rem; display:block; }
+
+.nav-link {
+  padding: .55rem 1rem;
+  border-radius: .9rem;
+  font-weight: 600;
+  color: #7c5b6b;
+  white-space: nowrap;
+}
+.nav-link.active { background: #ffe9f3; color: #bf3572; }
+.nav-link:hover { background: #fff6fa; }
+
+@media print {
+  .no-print { display: none !important; }
+  body { background: white !important; }
+  .print-area { box-shadow: none !important; border: none !important; }
+}
