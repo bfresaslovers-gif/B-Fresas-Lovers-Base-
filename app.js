@@ -49,6 +49,7 @@ const routes = {
   historial: pageHistorial,
   recompensas: pageRecompensas,
   recibos: pageRecibos,
+  contabilidad: pageContabilidad,
 };
 
 function currentRoute() {
@@ -104,6 +105,7 @@ function renderShell() {
             <a href="#/historial" data-route="historial" class="nav-link">Historial</a>
             <a href="#/recompensas" data-route="recompensas" class="nav-link">Recompensas</a>
             <a href="#/recibos" data-route="recibos" class="nav-link">Recibos</a>
+            <a href="#/contabilidad" data-route="contabilidad" class="nav-link">Contabilidad</a>
           </nav>
           <div class="flex items-center gap-3">
             <span class="hidden sm:block text-xs text-slate-400">${esc(email)}</span>
@@ -117,6 +119,7 @@ function renderShell() {
           <a href="#/historial" data-route="historial" class="nav-link text-sm">Historial</a>
           <a href="#/recompensas" data-route="recompensas" class="nav-link text-sm">Recompensas</a>
           <a href="#/recibos" data-route="recibos" class="nav-link text-sm">Recibos</a>
+          <a href="#/contabilidad" data-route="contabilidad" class="nav-link text-sm">Contabilidad</a>
         </nav>
       </header>
       <main class="flex-1 max-w-7xl w-full mx-auto px-4 py-6" id="outlet"></main>
@@ -896,6 +899,27 @@ async function pageRecompensas(outlet) {
   load();
 }
 
+async function pageContabilidad(outlet) {
+  const now = new Date();
+  const defaultMonth = now.toISOString().slice(0, 7);
+  outlet.innerHTML = '<div class="flex items-center justify-between gap-3 mb-5 flex-wrap"><div><h1 class="font-heading text-2xl font-bold text-slate-700">Contabilidad</h1><p class="text-sm text-slate-400 mt-1">Ventas, gastos y neto mensual desde Supabase.</p></div><div class="flex items-center gap-2"><label class="text-sm font-semibold text-slate-500">Mes</label><input id="acctMonth" type="month" class="input w-auto" value="' + defaultMonth + '" /></div></div><div id="acctContent"><div class="text-center text-slate-400 py-20">Cargando contabilidad…</div></div>';
+  const monthInput = document.getElementById('acctMonth');
+  monthInput.onchange = () => loadAccounting(monthInput.value);
+  await loadAccounting(defaultMonth);
+  async function loadAccounting(month) {
+    const content = document.getElementById('acctContent'); content.innerHTML = '<div class="text-center text-slate-400 py-20">Cargando…</div>';
+    const monthStart = month + '-01'; const next = new Date(monthStart + 'T00:00:00'); next.setMonth(next.getMonth() + 1); const nextMonth = next.toISOString().slice(0,10);
+    const [summaryRes, receiptsRes, expensesRes] = await Promise.all([supabase.from('accounting_monthly_summary').select('*').eq('month',monthStart).maybeSingle(),supabase.from('receipts').select('*').gte('receipt_date',monthStart).lt('receipt_date',nextMonth).order('receipt_date',{ascending:false}).order('id',{ascending:false}).limit(100),supabase.from('business_expenses').select('*').gte('expense_date',monthStart).lt('expense_date',nextMonth).order('expense_date',{ascending:false}).order('id',{ascending:false}).limit(100)]);
+    if(summaryRes.error){content.innerHTML='<div class="card p-5 text-rose-500 text-sm">No se pudo cargar el resumen: '+esc(summaryRes.error.message)+'</div>';return;}
+    const s=summaryRes.data||{sales_cash:0,sales_card:0,sales_ath_movil:0,sales_other:0,sales_doordash:0,sales_total:0,expenses_cash:0,expenses_card:0,expenses_ath_movil:0,expenses_other:0,expenses_total:0,net:0}; const receipts=receiptsRes.data||[]; const expenses=expensesRes.data||[];
+    const salesRows=rowStat('💵 Efectivo',fmt(s.sales_cash))+rowStat('💳 Tarjeta',fmt(s.sales_card))+rowStat('📱 ATH Móvil',fmt(s.sales_ath_movil))+rowStat('Otro',fmt(s.sales_other));
+    const expenseRows=rowStat('💵 Efectivo',fmt(s.expenses_cash))+rowStat('💳 Tarjeta',fmt(s.expenses_card))+rowStat('📱 ATH Móvil',fmt(s.expenses_ath_movil))+rowStat('Otro',fmt(s.expenses_other));
+    const receiptRows=receipts.map(r=>{const label=({sale:'Venta',expense:'Gasto',payment_proof:'Evidencia de pago',platform_report:'Reporte de plataforma'})[r.receipt_type]||r.receipt_type;const isExp=r.receipt_type==='expense';return '<div class="flex items-center justify-between gap-3 border-b border-blush-50 py-2.5"><div class="min-w-0"><div class="font-semibold text-sm text-slate-600 truncate">'+esc(r.vendor||label)+'</div><div class="text-xs text-slate-400">'+label+' · '+fmtDate(r.receipt_date)+(r.payment_method?' · '+(PAYMENT_LABELS[r.payment_method]||r.payment_method):'')+'</div></div><div class="font-bold '+(isExp?'text-slate-600':'text-blush-600')+'">'+(isExp?'-':'')+fmt(r.amount)+'</div></div>';}).join('')||'<p class="text-sm text-slate-400">No hay recibos en este mes.</p>';
+    const expenseTable=expenses.map(e=>{const r=receipts.find(x=>x.expense_id===e.id);return '<tr class="border-b border-blush-50"><td class="p-2">'+fmtDate(e.expense_date)+'</td><td class="p-2">'+esc(e.name)+'</td><td class="p-2">'+esc(e.category)+'</td><td class="p-2">'+esc(r?.payment_method?(PAYMENT_LABELS[r.payment_method]||r.payment_method):'—')+'</td><td class="p-2 text-right font-semibold">'+fmt(e.amount)+'</td></tr>';}).join('')||'<tr><td colspan="5" class="p-5 text-center text-slate-400">No hay gastos registrados.</td></tr>';
+    content.innerHTML='<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">'+statCard('Ventas',fmt(s.sales_total),'💰')+statCard('Gastos',fmt(s.expenses_total),'🧾')+statCard('Neto',fmt(s.net),'💗')+statCard('DoorDash',fmt(s.sales_doordash),'🛵')+'</div><div class="grid lg:grid-cols-2 gap-5 mb-5"><div class="card p-5"><h2 class="font-heading font-bold text-slate-600 mb-4">Ventas por método</h2><div class="space-y-3">'+salesRows+'<div class="border-t border-blush-100 pt-3">'+rowStat('Total ventas',fmt(s.sales_total))+'</div></div></div><div class="card p-5"><h2 class="font-heading font-bold text-slate-600 mb-4">Gastos por método</h2><div class="space-y-3">'+expenseRows+'<div class="border-t border-blush-100 pt-3">'+rowStat('Total gastos',fmt(s.expenses_total))+'</div></div></div></div><div class="grid lg:grid-cols-2 gap-5"><div class="card p-5"><div class="flex items-center justify-between mb-4"><h2 class="font-heading font-bold text-slate-600">Registrar gasto</h2><span class="chip chip-pink">Contabilidad</span></div><form id="expenseForm" class="space-y-3"><div class="grid sm:grid-cols-2 gap-3"><div><label class="label">Fecha</label><input required id="expenseDate" type="date" class="input" value="'+monthStart+'" /></div><div><label class="label">Monto</label><input required id="expenseAmount" type="number" min="0" step="0.01" class="input" placeholder="0.00" /></div></div><div><label class="label">Descripción</label><input required id="expenseName" class="input" placeholder="Ej. Compra de fresas" /></div><div class="grid sm:grid-cols-2 gap-3"><div><label class="label">Categoría</label><select id="expenseCategory" class="input"><option value="fixed">Fijo</option><option value="variable" selected>Variable</option><option value="payroll">Nómina</option><option value="other">Otro</option></select></div><div><label class="label">Método de pago</label><select id="expensePayment" class="input">'+Object.entries(PAYMENT_LABELS).map(([k,l])=>'<option value="'+k+'">'+l+'</option>').join('')+'</select></div></div><div><label class="label">Notas</label><textarea id="expenseNotes" class="input" rows="2" placeholder="Opcional"></textarea></div><button class="btn-primary w-full py-2.5" type="submit">Guardar gasto</button></form></div><div class="card p-5"><div class="flex items-center justify-between mb-4"><h2 class="font-heading font-bold text-slate-600">Movimientos del mes</h2><span class="text-xs text-slate-400">'+receipts.length+' recibos</span></div><div class="space-y-2 max-h-[420px] overflow-y-auto">'+receiptRows+'</div></div></div><div class="card p-5 mt-5"><h2 class="font-heading font-bold text-slate-600 mb-3">Gastos registrados</h2><div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="text-left text-slate-400 border-b border-blush-50"><th class="p-2">Fecha</th><th class="p-2">Descripción</th><th class="p-2">Categoría</th><th class="p-2">Pago</th><th class="p-2 text-right">Monto</th></tr></thead><tbody>'+expenseTable+'</tbody></table></div></div>';
+    document.getElementById('expenseForm').onsubmit=async e=>{e.preventDefault();const btn=e.target.querySelector('button[type="submit"]');btn.disabled=true;btn.textContent='Guardando…';const expenseDate=document.getElementById('expenseDate').value,amount=Number(document.getElementById('expenseAmount').value||0),name=document.getElementById('expenseName').value.trim(),category=document.getElementById('expenseCategory').value,paymentMethod=document.getElementById('expensePayment').value,notes=document.getElementById('expenseNotes').value.trim();const {data:expense,error:expenseErr}=await supabase.from('business_expenses').insert({expense_date:expenseDate,category,name,amount,notes:notes||null}).select().single();if(expenseErr){toast('No se pudo guardar el gasto: '+expenseErr.message,'red');btn.disabled=false;btn.textContent='Guardar gasto';return;}const {error:receiptErr}=await supabase.from('receipts').insert({receipt_type:'expense',receipt_date:expenseDate,vendor:name,amount,expense_id:expense.id,payment_method:paymentMethod,notes:notes||null});if(receiptErr){toast('El gasto se guardó, pero no se pudo crear su recibo: '+receiptErr.message,'red');}else{toast('Gasto guardado 💗','mint');}await loadAccounting(month);};
+  }
+}
 // ---------- RECIBOS (lista) ----------
 async function pageRecibos(outlet) {
   outlet.innerHTML = `
